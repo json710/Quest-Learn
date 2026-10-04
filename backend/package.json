@@ -1,0 +1,40 @@
+{
+  "name": "questlearn-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "QuestLearn API server",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "lint": "oxlint src test scripts",
+    "syntax": "node scripts/check-syntax.js",
+    "test": "node --test",
+    "check": "npm run lint && npm run syntax && npm test",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:validate": "prisma validate",
+    "prisma:studio": "prisma studio"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.12.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "oxlint": "^1.79.0",
+    "prisma": "^6.12.0"
+  }
+}

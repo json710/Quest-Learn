@@ -1,0 +1,17 @@
+{
+  "name": "quest-learn",
+  "version": "0.1.0",
+  "private": true,
+  "description": "QuestLearn full-stack application",
+  "scripts": {
+    "dev": "concurrently --kill-others --names frontend,backend --prefix-colors cyan,green \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix frontend run build",
+    "check": "npm --prefix frontend run lint && npm --prefix frontend run build && npm --prefix backend run check",
+    "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

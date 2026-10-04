@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  REVIEWED
+}
+
+enum XpRewardType {
+  QUIZ_ATTEMPT
+  TASK_REVIEW
+}
+
+enum BadgeKey {
+  FIRST_QUIZ
+  QUIZ_MASTER
+  FIRST_TASK_REVIEWED
+  LEVEL_2
+}
+
+model User {
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
+  password      String
+  role          Role          @default(STUDENT)
+  isActive      Boolean       @default(true)
+  xp            Int           @default(0)
+  level         Int           @default(1)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  taughtCourses Course[]      @relation("CourseInstructor")
+  enrollments   Enrollment[]  @relation("StudentEnrollments")
+  submissions   Submission[]  @relation("StudentSubmissions")
+  quizAttempts  QuizAttempt[] @relation("StudentQuizAttempts")
+  xpRewards     XpReward[]    @relation("StudentXpRewards")
+  badges        UserBadge[]   @relation("StudentBadges")
+
+  @@index([role, isActive, createdAt])
+}
+
+model Course {
+  id            String         @id @default(cuid())
+  title         String
+  description   String
+  isPublished   Boolean        @default(false)
+  instructorId  String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  instructor    User           @relation("CourseInstructor", fields: [instructorId], references: [id], onDelete: Restrict)
+  enrollments   Enrollment[]
+  lessons       Lesson[]
+  learningTasks LearningTask[]
+  quizzes       Quiz[]
+
+  @@index([instructorId])
+  @@index([isPublished, createdAt])
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  studentId String
+  courseId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student   User     @relation("StudentEnrollments", fields: [studentId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([studentId, createdAt])
+  @@index([courseId])
+}
+
+model Lesson {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  position  Int      @default(0)
+  courseId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quizzes   Quiz[]
+
+  @@index([courseId, position])
+}
+
+model LearningTask {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  position    Int          @default(0)
+  courseId    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@index([courseId, position])
+}
+
+model Submission {
+  id             String           @id @default(cuid())
+  content        String
+  status         SubmissionStatus @default(SUBMITTED)
+  score          Int?
+  feedback       String?
+  studentId      String
+  learningTaskId String
+  submittedAt    DateTime         @default(now())
+  reviewedAt     DateTime?
+  updatedAt      DateTime         @updatedAt
+  student        User             @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  learningTask   LearningTask     @relation(fields: [learningTaskId], references: [id], onDelete: Cascade)
+  xpReward       XpReward?
+
+  @@unique([studentId, learningTaskId])
+  @@index([studentId, submittedAt])
+  @@index([learningTaskId, status])
+}
+
+model Quiz {
+  id          String         @id @default(cuid())
+  title       String
+  description String
+  isPublished Boolean        @default(false)
+  courseId    String
+  lessonId    String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  course      Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson      Lesson?        @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  questions   QuizQuestion[]
+  attempts    QuizAttempt[]
+
+  @@index([courseId, isPublished, createdAt])
+  @@index([lessonId])
+}
+
+model QuizQuestion {
+  id        String       @id @default(cuid())
+  text      String
+  order     Int          @default(0)
+  quizId    String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  quiz      Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options   QuizOption[]
+  answers   QuizAnswer[]
+
+  @@index([quizId, order])
+}
+
+model QuizOption {
+  id         String       @id @default(cuid())
+  text       String
+  isCorrect  Boolean      @default(false)
+  questionId String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers    QuizAnswer[]
+
+  @@index([questionId, createdAt])
+}
+
+model QuizAttempt {
+  id          String       @id @default(cuid())
+  quizId      String
+  studentId   String
+  startedAt   DateTime     @default(now())
+  submittedAt DateTime?
+  score       Int?
+  updatedAt   DateTime     @updatedAt
+  quiz        Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student     User         @relation("StudentQuizAttempts", fields: [studentId], references: [id], onDelete: Cascade)
+  answers     QuizAnswer[]
+  xpReward    XpReward?
+
+  @@index([studentId, startedAt])
+  @@index([quizId, submittedAt])
+}
+
+model QuizAnswer {
+  id               String       @id @default(cuid())
+  attemptId        String
+  questionId       String
+  selectedOptionId String
+  createdAt        DateTime     @default(now())
+  attempt          QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption   QuizOption   @relation(fields: [selectedOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+  @@index([selectedOptionId])
+}
+
+model XpReward {
+  id            String       @id @default(cuid())
+  type          XpRewardType
+  amount        Int
+  xpAfter       Int
+  levelBefore   Int
+  levelAfter    Int
+  userId        String
+  quizAttemptId String?      @unique
+  submissionId  String?      @unique
+  createdAt     DateTime     @default(now())
+  user          User         @relation("StudentXpRewards", fields: [userId], references: [id], onDelete: Cascade)
+  quizAttempt   QuizAttempt? @relation(fields: [quizAttemptId], references: [id], onDelete: SetNull)
+  submission    Submission?  @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([type])
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  key         BadgeKey    @unique
+  name        String
+  description String
+  requirement String
+  iconKey     String
+  createdAt   DateTime    @default(now())
+  users       UserBadge[]
+}
+
+model UserBadge {
+  userId   String
+  badgeId  String
+  sourceId String?
+  earnedAt DateTime @default(now())
+  user     User     @relation("StudentBadges", fields: [userId], references: [id], onDelete: Cascade)
+  badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, badgeId])
+  @@index([userId, earnedAt])
+  @@index([sourceId])
+}

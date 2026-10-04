@@ -1,0 +1,13 @@
+import { Router } from 'express'
+
+import { studentAnalytics } from '../controllers/analytics.controller.js'
+import { authenticate } from '../middleware/authenticate.middleware.js'
+import { authorizeRoles } from '../middleware/authorize.middleware.js'
+import { asyncHandler } from '../utils/async-handler.js'
+
+const router = Router()
+
+router.use(authenticate, authorizeRoles('STUDENT'))
+router.get('/', asyncHandler(studentAnalytics))
+
+export default router
