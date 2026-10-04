@@ -1,5 +1,34 @@
 # QuestLearn
 
+## Online demo deployment (Render)
+
+The root `render.yaml` creates one Express web service serving both the built
+React app and `/api`, plus a separate PostgreSQL database. Database credentials
+are injected by Render and the JWT secret is generated automatically. Your local
+`.env` and local users/courses are not uploaded or copied to this new database.
+
+1. Sign in at https://dashboard.render.com/ using your GitHub account.
+2. Select **New > Blueprint** and connect `json710/Quest-Learn`, branch `main`.
+3. Review `questlearn` and `questlearn-db`; both should show the **Free** plan.
+   If a paid plan is shown, stop and review the price before deploying.
+4. Deploy the Blueprint and wait for the database and web service to become ready.
+   The build installs dependencies, generates Prisma Client, and builds React.
+   Startup applies the checked-in migrations before starting Express.
+5. Open the web service's actual Render URL, register a student, and test login,
+   refresh, and logout. `/health` should return `{ "status": "ok" }`.
+
+Free Render PostgreSQL expires after 30 days; do not use it for long-term data.
+Free web services sleep after inactivity, so the first visit may take a minute.
+See https://render.com/docs/free for current limits. Upgrading costs money.
+This demo starts with no users or courses. Registration creates students only;
+instructor/admin roles must be assigned deliberately by a database owner or an
+existing administrator. Do not expose Prisma Studio as a public admin interface.
+
+Local development still uses `npm run dev` and the separate localhost API.
+To run the production app locally, build the frontend, generate Prisma Client,
+apply migrations to the intended database, set `NODE_ENV=production`, and start
+the backend. The frontend uses `/api` unless `VITE_API_URL` overrides it.
+
 QuestLearn is a full-stack learning application scaffold. The current backend
 implements authentication, course management, enrollment, lessons, and learning
 tasks, plus text-based submissions, quizzes, XP/level progression, and student
